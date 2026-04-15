@@ -417,71 +417,76 @@ textarea { resize: vertical; }
 <div id="screen-jira" class="screen">
  <div class="header" style="background:linear-gradient(135deg,#0052CC,#0747A6);">
   <div>
-   <div class="header-title">Tablero Jira</div>
-   <div class="header-sub">Integración y Ejemplo</div>
+   <div class="header-title">Integración Jira (MCP)</div>
+   <div class="header-sub">Model Context Protocol Server</div>
   </div>
   <div class="header-btns">
    <button class="header-btn" onclick="goTo('home')">← Volver</button>
   </div>
  </div>
- <div class="content" style="max-width:800px; display:flex; flex-wrap:wrap; gap:20px;">
+ <div class="content" style="max-width:800px; display:flex; flex-direction:column; gap:20px;">
   
-  <!-- Left Side: Connection Info -->
-  <div style="flex:1; min-width:300px;">
-   <div class="card" style="height:100%;">
-    <div class="card-label" style="color:#0052CC;">Cómo conectarse a Jira</div>
-    <p style="font-size:14px; margin-bottom:12px; line-height:1.5;">Para sincronizar los retos aprobados directamente con el Backlog, configura estas credenciales:</p>
-    
-    <div style="margin-bottom:12px;">
-     <label style="font-size:12px; font-weight:bold; color:var(--muted);">URL del Workspace</label>
-     <input type="text" value="https://alma-medical.atlassian.net" readonly style="background:#F3F4F6; color:var(--muted); font-size:13px; margin-top:4px;" />
-    </div>
-    
-    <div style="margin-bottom:12px;">
-     <label style="font-size:12px; font-weight:bold; color:var(--muted);">Email del Usuario</label>
-     <input type="text" placeholder="usuario@almamedical.com" style="font-size:13px; margin-top:4px;" />
-    </div>
-
-    <div style="margin-bottom:12px;">
-     <label style="font-size:12px; font-weight:bold; color:var(--muted);">API Token</label>
-     <input type="text" placeholder="ATATT3xFfGF..." style="font-size:13px; margin-top:4px;" />
-     <div style="font-size:10px; color:var(--faint); margin-top:4px;">Se genera en Atlassian Account Settings &gt; Security.</div>
-    </div>
-
-    <button class="btn-primary" style="background:linear-gradient(135deg,#0052CC,#0747A6); padding:10px; font-size:14px;">Probar Conexión</button>
+  <!-- Connection Panel -->
+  <div class="card" id="mcp-connect-panel">
+   <div class="card-label" style="color:#0052CC;">Configuración del Servidor MCP</div>
+   <p style="font-size:14px; margin-bottom:15px; line-height:1.5;">Conecta este auditor directamente al <strong>Backlog de Jira</strong> a través del protocolo seguro MCP para sincronizar retos aprobados en tiempo real.</p>
+   
+   <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+    <input type="text" id="jira-url" value="https://alma-medical.atlassian.net" readonly style="flex:2; min-width:200px; background:#F3F4F6; color:var(--muted); font-size:13px;" />
+    <button id="btn-mcp-connect" class="btn-primary" style="flex:1; min-width:200px; background:linear-gradient(135deg,#0052CC,#0747A6); padding:10px; font-size:14px;" onclick="simularMCP()">Inicializar Conexión MCP</button>
+   </div>
+   <div id="mcp-logs" style="background:#1C1917; color:#A7F3D0; font-family:monospace; font-size:12px; padding:12px; border-radius:8px; display:none; height:120px; overflow-y:auto; margin-top:15px; line-height:1.6;">
    </div>
   </div>
 
-  <!-- Right Side: Example -->
-  <div style="flex:1; min-width:300px;">
-   <div class="card" style="height:100%; background:#F4F5F7; border:none;">
-    <div class="card-label" style="color:#0052CC;">Previsualización de Épica (Ejemplo)</div>
-    
-    <div style="background:white; border-radius:3px; box-shadow:0 1px 2px rgba(0,0,0,0.1); padding:16px; margin-top:10px;">
-     <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-      <div style="display:flex; align-items:center; gap:6px;">
-       <div style="background:#8777D9; border-radius:3px; width:16px; height:16px; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:bold;">⚡</div>
-       <span style="font-size:12px; color:#5E6C84; font-weight:600;">ALMA-104</span>
+  <!-- Dashboard Panel (Hidden initially) -->
+  <div id="mcp-dashboard" style="display:none; flex-direction:column; gap:15px;">
+   
+   <!-- Stats -->
+   <div style="display:flex; flex-wrap:wrap; gap:10px;">
+    <div class="card" style="flex:1; min-width:120px; text-align:center; padding:15px; margin-bottom:0;">
+     <div style="font-size:28px; font-weight:800; color:#0052CC;" id="dash-val-1">0</div>
+     <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:bold; margin-top:5px;">Épicas Sincronizadas</div>
+    </div>
+    <div class="card" style="flex:1; min-width:120px; text-align:center; padding:15px; margin-bottom:0;">
+     <div style="font-size:28px; font-weight:800; color:#16A34A;" id="dash-val-2">--</div>
+     <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:bold; margin-top:5px;">Estado Servidor</div>
+    </div>
+    <div class="card" style="flex:1; min-width:120px; text-align:center; padding:15px; margin-bottom:0;">
+     <div style="font-size:28px; font-weight:800; color:#D97706;" id="dash-val-3">0ms</div>
+     <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:bold; margin-top:5px;">Latencia MCP</div>
+    </div>
+   </div>
+
+   <!-- Example Ticket -->
+   <div class="card" style="background:#F4F5F7; border:none; margin-top:5px;">
+    <div class="card-label" style="color:#0052CC;">Último Reto Sincronizado (Vista Previa en Jira)</div>
+    <div style="background:white; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); padding:20px; margin-top:10px;">
+     <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+       <div style="background:#8777D9; border-radius:3px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:bold;">⚡</div>
+       <span style="font-size:14px; color:#5E6C84; font-weight:700;">ALMA-104</span>
       </div>
-      <span style="background:#DFE1E6; color:#42526E; font-size:11px; padding:2px 6px; border-radius:3px; font-weight:bold;">TO DO</span>
+      <span style="background:#DFE1E6; color:#42526E; font-size:12px; padding:4px 8px; border-radius:3px; font-weight:bold;">TO DO</span>
      </div>
      
-     <div style="font-size:15px; font-weight:600; color:#172B4D; margin-bottom:12px;">
+     <div style="font-size:17px; font-weight:700; color:#172B4D; margin-bottom:12px;">
       Iniciativa IA: Automatización de Triage Médico
      </div>
 
-     <div style="font-size:13px; color:#172B4D; margin-bottom:12px; line-height:1.5;">
-      <strong>Descripción:</strong><br>
-      Implementación de un agente autónomo para clasificar estudios prioritarios, reduciendo el cuello de botella actual. Aprobado en el Workshop.
+     <div style="font-size:14px; color:#172B4D; margin-bottom:16px; line-height:1.6;">
+      <strong>Origen:</strong> Sincronizado vía <span style="font-family:monospace; background:#F3F4F6; padding:2px 4px; border-radius:3px;">MCP_AUDIT_TOOL</span><br>
+      Implementación de un agente autónomo para clasificar estudios prioritarios, reduciendo el cuello de botella actual (Capa 1). Evaluado y aprobado en el Workshop.
      </div>
 
-     <div style="display:flex; gap:10px; border-top:1px solid #DFE1E6; padding-top:12px;">
-      <span style="background:#E3FCEF; color:#006644; font-size:11px; padding:2px 6px; border-radius:3px; font-weight:bold;">Aprobado</span>
-      <span style="background:#DEEBFF; color:#0747A6; font-size:11px; padding:2px 6px; border-radius:3px; font-weight:bold;">Capa 1 completada</span>
+     <div style="display:flex; flex-wrap:wrap; gap:10px; border-top:1px solid #DFE1E6; padding-top:16px;">
+      <span style="background:#E3FCEF; color:#006644; font-size:12px; padding:3px 8px; border-radius:4px; font-weight:bold;">✅ Aprobado (Workshop)</span>
+      <span style="background:#DEEBFF; color:#0747A6; font-size:12px; padding:3px 8px; border-radius:4px; font-weight:bold;">🤖 Requiere GenAI</span>
+      <span style="background:#FFEDEB; color:#BF2600; font-size:12px; padding:3px 8px; border-radius:4px; font-weight:bold;">🛡️ ISO 13485</span>
      </div>
     </div>
-    <p style="font-size:11px; color:var(--muted); margin-top:16px; text-align:center;">Así se verá el reto una vez sincronizado en el backlog de Jira.</p>
    </div>
+
   </div>
 
  </div>
@@ -1020,6 +1025,54 @@ function importSession() {
  } catch(e) {
  document.getElementById('import-error').style.display = 'block';
  }
+}
+
+// ════════════════════════════════════════════
+// MCP SIMULATION (JIRA)
+// ════════════════════════════════════════════
+function simularMCP() {
+ const btn = document.getElementById('btn-mcp-connect');
+ const logs = document.getElementById('mcp-logs');
+ const dash = document.getElementById('mcp-dashboard');
+ 
+ btn.disabled = true;
+ btn.textContent = 'Conectando Servidor...';
+ logs.style.display = 'block';
+ logs.innerHTML = '';
+ dash.style.display = 'none';
+
+ const mensajes = [
+  "> Inicializando Model Context Protocol (MCP)...",
+  "> Autenticando vía API Token...",
+  "> Handshake completado. Versión: 2026.1",
+  "> Obteniendo esquemas de Jira Boards...",
+  "> Estableciendo socket de sincronización...",
+  "> 🟢 Conexión establecida exitosamente."
+ ];
+
+ let i = 0;
+ const intervalo = setInterval(() => {
+  logs.innerHTML += mensajes[i] + '<br>';
+  logs.scrollTop = logs.scrollHeight;
+  i++;
+  if (i >= mensajes.length) {
+   clearInterval(intervalo);
+   btn.textContent = '✅ Conectado a Jira (MCP)';
+   btn.style.background = '#16A34A';
+   
+   // Simular parpadeo de latencia y mostrar dash
+   setTimeout(() => {
+    dash.style.display = 'flex';
+    document.getElementById('dash-val-1').textContent = state.retos.filter(r=>r.completado && r.decision==='Probar').length || '1';
+    document.getElementById('dash-val-2').textContent = 'ONLINE';
+    
+    // Latencia dinámica fake
+    setInterval(() => {
+     document.getElementById('dash-val-3').textContent = (Math.floor(Math.random() * 20) + 30) + 'ms';
+    }, 2000);
+   }, 500);
+  }
+ }, 600);
 }
 
 // ════════════════════════════════════════════
