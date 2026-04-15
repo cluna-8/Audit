@@ -679,7 +679,7 @@ function renderLista() {
  const dotColor = r.completado && dec ? dec.color : '#FED7AA';
  const sub = r.completado ? 'Decisión: ' + (r.decision || '—') : 'Capa ' + (r.capaActual+1) + ' de ' + CAPAS.length;
  const btnLabel = r.completado ? 'Ver' : 'Auditar →';
- completado ? `openCierre('${r.id}')` : `openReto('${r.id}')`;
+ const onClick = r.completado ? `openCierre('${r.id}')` : `openReto('${r.id}')`;
  return `
  <div class="reto-item" id="item-${r.id}">
  <div style="display:flex;align-items:center;gap:12px;">
