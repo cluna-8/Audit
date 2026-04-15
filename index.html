@@ -837,3 +837,126 @@ function renderResumen() {
  </div>`;
  }).join('');
 }
+
+// ════════════════════════════════════════════
+// ACTIONS
+// ════════════════════════════════════════════
+function addReto() {
+ const input = document.getElementById('nuevo-nombre');
+ const nombre = input.value.trim();
+ if (!nombre) return;
+ const r = emptyReto(nombre);
+ state.retos.push(r);
+ state.retoActivo = r.id;
+ input.value = '';
+ persist();
+ goTo('escuchando');
+}
+
+function openReto(id) {
+ state.retoActivo = id;
+ goTo('escuchando');
+}
+
+function openCierre(id) {
+ state.retoActivo = id;
+ goTo('cierre');
+}
+
+function setCapa(i) {
+ const reto = state.retos.find(r => r.id === state.retoActivo);
+ if (!reto) return;
+ reto.capaActual = i;
+ state.hintVisible = null;
+ persist();
+ renderEscuchando();
+}
+
+function toggleSem(pregId, val) {
+ const reto = state.retos.find(r => r.id === state.retoActivo);
+ if (!reto) return;
+ reto.señales[pregId] = reto.señales[pregId] === val ? null : val;
+ persist();
+ renderEscuchando();
+}
+
+function toggleHint(pregId) {
+ state.hintVisible = state.hintVisible === pregId ? null : pregId;
+ renderEscuchando();
+}
+
+function setDecision(val) {
+ const reto = state.retos.find(r => r.id === state.retoActivo);
+ if (!reto) return;
+ reto.decision = val;
+ persist();
+ renderCierre();
+}
+
+function completarReto() {
+ const reto = state.retos.find(r => r.id === state.retoActivo);
+ if (!reto || !reto.decision) return;
+ reto.nota = document.getElementById('nota-textarea').value;
+ reto.completado = true;
+ persist();
+ goTo('lista');
+}
+
+// ════════════════════════════════════════════
+// SESSION EXPORT / IMPORT
+// ════════════════════════════════════════════
+function saveSession() {
+ const code = btoa(unescape(encodeURIComponent(JSON.stringify(state.retos))));
+ navigator.clipboard.writeText(code).then(() => {
+ const btn = document.getElementById('save-btn');
+ if (btn) {
+ btn.textContent = '✓ Copiado en portapapeles';
+ btn.classList.add('ok');
+ setTimeout(() => {
+ btn.textContent = '💾 Guardar sesión';
+ btn.classList.remove('ok');
+ }, 2500);
+ }
+ }).catch(() => {
+ document.getElementById('import-text').value = code;
+ document.getElementById('import-modal').classList.add('open');
+ });
+}
+
+function closeImport() {
+ document.getElementById('import-modal').classList.remove('open');
+ document.getElementById('import-error').style.display = 'none';
+ document.getElementById('import-text').value = '';
+}
+
+function importSession() {
+ try {
+ const raw = document.getElementById('import-text').value.trim();
+ const data = JSON.parse(decodeURIComponent(escape(atob(raw))));
+ if (!Array.isArray(data)) throw new Error();
+ state.retos = data;
+ persist();
+ closeImport();
+ goTo('lista');
+ } catch(e) {
+ document.getElementById('import-error').style.display = 'block';
+ }
+}
+
+// ════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════
+function esc(str) {
+ return String(str)
+ .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+ .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+loadFromStorage();
+renderHome();
+</script>
+</body>
+</html>
