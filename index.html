@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+ <title>Auditor de Retos IA · Alma Medical</title>
+ <style>
+ * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+ --orange: #F97316;
+ --orange-d: #C2410C;
+ --orange-dd: #9A3412;
+ --cream: #FFF7ED;
+ --cream-b: #FED7AA;
+ --cream-d: #FDBA74;
+ --text: #1C1917;
+ --muted: #78716C;
+ --faint: #9CA3AF;
+ --green: #16A34A;
+ --green-bg: #DCFCE7;
+ --green-b: #86EFAC;
+ --yellow: #CA8A04;
+ --yellow-bg: #FEF9C3;
+ --yellow-b: #FDE047;
+ --red: #DC2626;
+ --red-bg: #FEE2E2;
+ --red-b: #FCA5A5;
+ --gray: #6B7280;
+ --gray-bg: #F3F4F6;
+ --gray-b: #D1D5DB;
+ --font: 'Georgia', 'Times New Roman', serif;
+}
+
+body {
+ font-family: var(--font);
+ background: var(--cream);
+ min-height: 100vh;
+ color: var(--text);
+}
+
+/* ── Layout ── */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+.content { max-width: 640px; margin: 0 auto; padding: 22px 16px 100px; width: 100%; }
+
+/* ── Header ── */
+.header {
+ padding: 18px 20px;
+ display: flex; align-items: center; justify-content: space-between;
+ position: sticky; top: 0; z-index: 10;
+}
+.header-title { color: white; font-size: 19px; font-weight: 800; }
+.header-sub { color: var(--cream-d); font-size: 12px; margin-top: 2px; }
+.header-btns { display: flex; gap: 8px; }
+.header-btn {
+ background: rgba(255,255,255,0.15);
+ border: 1px solid rgba(255,255,255,0.3);
+ color: white; padding: 7px 12px;
+ border-radius: 8px; cursor: pointer;
+ font-size: 12px; font-family: var(--font);
+}
+
+/* ── Cards ── */
+.card {
+ background: white; border-radius: 14px;
+ padding: 18px; border: 1px solid var(--cream-b);
+ margin-bottom: 14px;
+}
+.card-label {
+ font-size: 11px; color: var(--orange-dd); font-weight: 700;
+ text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+ background: linear-gradient(135deg, var(--orange), var(--orange-d));
+ color: white; border: none; padding: 14px 20px;
+ border-radius: 10px; cursor: pointer;
+ font-size: 15px; font-weight: 700; font-family: var(--font);
+ width: 100%;
+}
+.btn-secondary {
+ background: white; border: 1px solid var(--cream-b);
+ color: var(--orange-dd); padding: 13px 18px;
+ border-radius: 10px; cursor: pointer;
+ font-size: 14px; font-family: var(--font);
+}
+.btn-success {
+ background: linear-gradient(135deg, var(--green), #15803D);
+ color: white; border: none; padding: 13px;
+ border-radius: 10px; cursor: pointer;
+ font-size: 14px; font-weight: 700; font-family: var(--font); flex: 1;
+}
+.btn-disabled {
+ background: var(--gray-bg); color: var(--faint);
+ border: none; padding: 13px;
+ border-radius: 10px; cursor: not-allowed;
+ font-size: 14px; font-weight: 700; font-family: var(--font); flex: 1;
+}
+
+/* ── Input ── */
+.input-row { display: flex; gap: 8px; }
+input[type="text"], textarea {
+ font-family: var(--font);
+ border: 1px solid var(--cream-b);
+ border-radius: 10px; padding: 11px 14px;
+ font-size: 15px; background: #FFFBF7;
+ outline: none; width: 100%;
+}
+input[type="text"]:focus, textarea:focus {
+ border-color: var(--orange);
+}
+.input-add-btn {
+ background: linear-gradient(135deg, var(--orange), var(--orange-d));
+ color: white; border: none; padding: 11px 20px;
+ border-radius: 10px; cursor: pointer;
+ font-size: 18px; flex-shrink: 0;
+}
+textarea { resize: vertical; }
+
+/* ── Reto list item ── */
+.reto-item {
+ background: white; border-radius: 12px; padding: 15px 17px;
+ border: 1px solid var(--cream-b);
+ display: flex; align-items: center; justify-content: space-between;
+ margin-bottom: 10px;
+}
+.reto-dot {
+ width: 9px; height: 9px; border-radius: 50%;
+ background: var(--cream-b); flex-shrink: 0;
+}
+.reto-name { font-weight: 600; font-size: 15px; }
+.reto-sub { font-size: 12px; color: var(--faint); margin-top: 2px; }
+.reto-btn {
+ background: linear-gradient(135deg, var(--orange), var(--orange-d));
+ color: white; border: none; padding: 8px 15px;
+ border-radius: 8px; cursor: pointer;
+ font-size: 13px; font-weight: 600; font-family: var(--font);
+ white-space: nowrap;
+}
+
+/* ── Capa tabs ── */
+.capa-tabs { display: flex; background: white; border-bottom: 1px solid var(--cream-b); }
+.capa-tab {
+ flex: 1; padding: 9px 4px; background: white; border: none;
+ border-bottom: 3px solid transparent;
+ cursor: pointer; font-size: 11px; color: var(--faint);
+ font-family: var(--font);
+}
+.capa-tab.active { background: var(--cream); border-bottom-color: var(--orange); font-weight: 700; }
+
+/* ── Progress bar ── */
+.progress-bar { display: flex; gap: 4px; }
+.progress-seg {
+ flex: 1; height: 4px; border-radius: 2px;
+ background: rgba(255,255,255,0.3); cursor: pointer; transition: background 0.2s;
+}
+.progress-seg.done { background: white; }
+
+/* ── Pregunta card ── */
+.pregunta-card {
+ background: white; border-radius: 14px; padding: 16px;
+ border: 1px solid var(--cream-b); margin-bottom: 10px;
+ transition: border-color 0.15s;
+}
+.pregunta-top {
+ display: flex; justify-content: space-between; align-items: flex-start;
+ gap: 10px; margin-bottom: 12px;
+}
+.pregunta-text { font-size: 14px; font-weight: 600; line-height: 1.45; flex: 1; }
+.hint-btn {
+ background: var(--cream); border: 1px solid var(--cream-b);
+ border-radius: 50%; width: 26px; height: 26px;
+ cursor: pointer; font-size: 12px; color: var(--orange); flex-shrink: 0;
+ display: flex; align-items: center; justify-content: center;
+}
+.hint-box {
+ background: var(--cream); border: 1px solid var(--cream-b);
+ border-radius: 8px; padding: 9px 12px; font-size: 12px;
+ color: #92400E; margin-bottom: 10px; font-style: italic; line-height: 1.5;
+}
+
+/* ── Semáforo ── */
+.semaforo { display: flex; gap: 7px; }
+.sem-btn {
+ flex: 1; padding: 11px 6px; border-radius: 10px;
+ border: 2px solid var(--cream-b); background: white;
+ color: var(--faint); cursor: pointer;
+ font-family: var(--font); transition: all 0.12s;
+ text-align: center;
+}
+.sem-icon { font-size: 17px; margin-bottom: 2px; }
+.sem-label { font-size: 11px; }
+
+/* ── Decision buttons ── */
+.decision-row { display: flex; gap: 8px; }
+.dec-btn {
+ flex: 1; padding: 15px 6px; border-radius: 12px;
+ border: 2px solid var(--gray-b); background: white;
+ color: var(--faint); cursor: pointer;
+ font-family: var(--font); text-align: center; transition: all 0.12s;
+}
+.dec-val { font-size: 15px; margin-bottom: 3px; }
+.dec-desc { font-size: 10px; }
+
+/* ── Conteo boxes ── */
+.conteo-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.conteo-box {
+ flex: 1; border-radius: 10px; padding: 12px; text-align: center;
+}
+.conteo-num { font-size: 22px; font-weight: 800; }
+.conteo-lbl { font-size: 12px; font-weight: 600; margin-top: 2px; }
+
+/* ── Tag chips ── */
+.chip {
+ border-radius: 6px; padding: 3px 9px;
+ font-size: 11px; display: inline-block;
+}
+
+/* ── Bottom bar ── */
+.bottom-bar {
+ position: fixed; bottom: 0; left: 0; right: 0;
+ background: white; border-top: 1px solid var(--cream-b);
+ padding: 10px 16px; display: flex; gap: 8px; z-index: 50;
+}
+.save-btn {
+ flex: 1; background: linear-gradient(135deg, var(--orange), var(--orange-d));
+ color: white; border: none; padding: 10px; border-radius: 10px;
+ cursor: pointer; font-size: 13px; font-weight: 700; font-family: var(--font);
+}
+.save-btn.ok {
+ background: var(--green-bg); color: var(--green); border: 1px solid var(--green-b);
+}
+.restore-btn {
+ background: var(--cream); border: 1px solid var(--cream-b);
+ color: var(--orange-dd); padding: 10px 14px; border-radius: 10px;
+ cursor: pointer; font-size: 13px; font-weight: 700; font-family: var(--font);
+}
+
+/* ── Modal ── */
+.modal-overlay {
+ display: none; position: fixed; inset: 0;
+ background: rgba(0,0,0,0.5); z-index: 200;
+ align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {background: white; border-radius: 16px; padding: 24px;
+ width: 100%; max-width: 480px;
+}
+.modal h3 { font-size: 17px; margin-bottom: 8px; }
+.modal p { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+.modal textarea {
+ font-family: monospace; font-size: 12px;
+ height: 100px; margin-bottom: 6px;
+}
+.modal-btns { display: flex; gap: 8px; margin-top: 14px; }
+.error-msg { color: var(--red); font-size: 12px; margin-bottom: 4px; }
+
+/* ── Stats ── */
+.stats-row { display: flex; gap: 10px; margin-bottom: 18px; }
+.stat-box {
+ flex: 1; border-radius: 14px; padding: 16px; text-align: center;
+}
+.stat-num { font-size: 30px; font-weight: 800; }
+.stat-lbl { font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+/* ── Home hero ── */
+.hero {
+ background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dd) 100%);
+ padding: 44px 28px 52px; text-align: center;
+}
+.hero-eyebrow {
+ color: var(--cream-b); font-size: 11px;
+ letter-spacing: 4px; text-transform: uppercase; margin-bottom: 14px;
+}
+.hero-title {
+ color: white; font-size: 30px; font-weight: 800;
+ letter-spacing: -1px; margin-bottom: 8px;
+}
+.hero-sub { color: var(--cream-d); font-size: 15px; }
+
+/* ── Responsive nav ── */
+.nav-row { display: flex; gap: 8px; margin-top: 6px; }
+.empty-state { text-align: center; padding: 50px 20px; }
+.empty-icon { font-size: 42px; margin-bottom: 12px; }
+.empty-text { font-size: 15px; font-weight: 600; color: #92400E; }
+
+/* ── Capa header ── */
+.capa-header {
+ padding: 14px 18px;
+ position: sticky; top: 0; z-index: 10;
+}
+.capa-header-row {
+ display: flex; justify-content: space-between; align-items: center;
+ margin-bottom: 10px;
+}
+.capa-eyebrow { color: rgba(255,255,255,0.65); font-size: 11px; text-transform: uppercase; letter-spacing: 2px; }
+.capa-title { color: white; font-size: 17px; font-weight: 800; }
+.close-btn {
+ background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+ color: white; padding: 8px 14px; border-radius: 8px;
+ cursor: pointer; font-size: 13px; font-family: var(--font);
+}
+
+/* ── Resumen reto card ── */
+.resumen-card {
+ background: white; border-radius: 14px; padding: 16px 18px;
+ margin-bottom: 10px; border: 1px solid var(--cream-b);
+}
+.resumen-top {
+ display: flex; justify-content: space-between; align-items: flex-start;
+ margin-bottom: 10px;
+}
+.resumen-name { font-weight: 700; font-size: 15px; }
+.badge {
+ padding: 3px 11px; border-radius: 12px;
+ font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+.nota-text {
+ font-size: 12px; color: var(--muted); font-style: italic;
+ border-top: 1px solid var(--cream); padding-top: 8px; margin-top: 8px;
+}
+
+/* ── Restore notice ── */
+.restore-notice {
+ background: var(--yellow-bg); border: 1px solid var(--yellow-b);
+ border-radius: 12px; padding: 14px 18px;
+ display: flex; align-items: center; justify-content: space-between;
+ margin-bottom: 14px;
+}
+.restore-notice-text { font-size: 14px; color: #92400E; }
+.restore-notice-btn {
+ background: var(--yellow); color: white; border: none;
+ padding: 7px 14px; border-radius: 8px; cursor: pointer;
+ font-size: 13px; font-weight: 700; font-family: var(--font);
+ white-space: nowrap; margin-left: 12px;
+}
+
+ </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+ SCREEN: HOME
+════════════════════════════════════════════ -->
+
+<div id="screen-home" class="screen active" style="flex-direction:column;">
+ <div class="hero">
+ <div class="hero-eyebrow">Alma Medical Imaging</div>
+ <div class="hero-title">Auditor de Retos IA</div>
+ <div class="hero-sub">Workshop · Abril 2026</div>
+ </div>
+
+ <div class="content">
+ <div class="card" style="margin-bottom:20px;">
+ <div class="card-label">Cómo vamos a analizar</div>
+ <p style="font-size:15px;color:#44403C;line-height:1.7;margin-bottom:24px;">
+ Analizamos cada propuesta en <strong>4 capas</strong> para decidir si tiene base real para convertirse en una Iniciativa.
+ </p>
+ <div style="display:flex;gap:14px;margin-bottom:18px;align-items:flex-start;"><div style="background:#F97316;color:white;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">Capa 1</div>
+ <div><div style="font-weight:700;font-size:15px;margin-bottom:3px;">Comprensión del Reto</div>
+ <div style="font-size:13px;color:var(--muted);line-height:1.5;">Verificamos que el dolor está bien definido y cuantificado antes de hablar de tecnología.</div></div>
+ </div>
+ <div style="display:flex;gap:14px;margin-bottom:18px;align-items:flex-start;">
+ <div style="background:#EA580C;color:white;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">Capa 2</div>
+ <div><div style="font-weight:700;font-size:15px;margin-bottom:3px;">Tipo de Solución y Madurez</div>
+ <div style="font-size:13px;color:var(--muted);line-height:1.5;">Clasificamos si lo que se necesita es automatización, IA generativa o un agente. No es lo mismo ni cuesta lo mismo.</div></div>
+ </div>
+ <div style="display:flex;gap:14px;margin-bottom:18px;align-items:flex-start;">
+ <div style="background:#C2410C;color:white;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">Capa 3</div>
+ <div><div style="font-weight:700;font-size:15px;margin-bottom:3px;">Datos, Técnica y Seguridad</div>
+ <div style="font-size:13px;color:var(--muted);line-height:1.5;">Validamos que los datos existen, son accesibles y compatibles con el entorno Microsoft/Atlassian y la normativa ISO 13485.</div></div>
+ </div>
+ <div style="display:flex;gap:14px;align-items:flex-start;">
+ <div style="background:#9A3412;color:white;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">Capa 4</div>
+ <div><div style="font-weight:700;font-size:15px;margin-bottom:3px;">Ownership y Ejecución</div>
+ <div style="font-size:13px;color:var(--muted);line-height:1.5;">Confirmamos que hay un responsable real con capacidad para llevarlo adelante.</div></div>
+ </div>
+
+ <div style="margin-top:20px;padding:16px;background:var(--cream);border-radius:10px;border:1px solid var(--cream-b);">
+ <div style="font-size:12px;color:#92400E;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Decisión final por reto</div>
+ <div style="display:flex;gap:8px;">
+ <div style="flex:1;background:var(--green-bg);border:1px solid var(--green-b);border-radius:10px;padding:12px 8px;text-align:center;">
+ <div style="font-weight:800;color:var(--green);font-size:14px;">Probar</div>
+ <div style="font-size:11px;color:var(--gray);margin-top:3px;">Tiene base sólida</div>
+ </div>
+ <div style="flex:1;background:var(--yellow-bg);border:1px solid var(--yellow-b);border-radius:10px;padding:12px 8px;text-align:center;">
+ <div style="font-weight:800;color:var(--yellow);font-size:14px;">Evaluar</div>
+ <div style="font-size:11px;color:var(--gray);margin-top:3px;">Necesita más análisis</div>
+ </div>
+ <div style="flex:1;background:var(--gray-bg);border:1px solid var(--gray-b);border-radius:10px;padding:12px 8px;text-align:center;">
+ <div style="font-weight:800;color:var(--gray);font-size:14px;">Parking</div>
+ <div style="font-size:11px;color:var(--gray);margin-top:3px;">No está maduro aún</div>
+ </div>
+ </div>
+ </div>
+</div>
+
+<div id="home-restore-notice" style="display:none;" class="restore-notice">
+ <div class="restore-notice-text"><strong>Sesión guardada</strong> · <span id="home-restore-count"></span></div>
+ <button class="restore-notice-btn" onclick="goTo('lista')">Continuar →</button>
+</div>
+
+<button class="btn-primary" onclick="goTo('lista')" style="margin-bottom:8px;">
+ Empezar workshop →
+</button>
+
+ </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+ SCREEN: LISTA
+════════════════════════════════════════════ -->
+
+<div id="screen-lista" class="screen">
+ <div class="header" style="background:linear-gradient(135deg,#F97316,#9A3412);">
+ <div><div class="header-title">Retos del Workshop</div>
+ <div class="header-sub" id="lista-sub">0 completados · 0 total</div>
+ </div>
+ <div class="header-btns">
+ <button class="header-btn" onclick="goTo('home')">Inicio</button>
+ <button class="header-btn" id="btn-resumen" style="display:none;" onclick="goTo('resumen')">Resumen</button>
+ </div>
+ </div>
+ <div class="content">
+ <div class="card">
+ <div class="card-label">Añadir reto</div>
+ <div class="input-row">
+ <input type="text" id="nuevo-nombre" placeholder="Nombre del reto..." onkeydown="if(event.key==='Enter')addReto()" />
+ <button class="input-add-btn" onclick="addReto()">+</button>
+ </div>
+ </div>
+ <div id="retos-list">
+ <div class="empty-state">
+ <div class="empty-icon">🎯</div>
+ <div class="empty-text">Cuando presenten el primer reto, añádelo aquí</div>
+ </div>
+ </div>
+ </div>
+ <div class="bottom-bar">
+ <button class="save-btn" id="save-btn" onclick="saveSession()">💾 Guardar sesión</button>
+ </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+ SCREEN: ESCUCHANDO
+════════════════════════════════════════════ -->
+
+<div id="screen-escuchando" class="screen">
+ <div id="capa-header" class="capa-header">
+ <div class="capa-header-row">
+ <div>
+ <div class="capa-eyebrow" id="esc-reto-name">—</div>
+ <div class="capa-title" id="esc-capa-title">—</div>
+ </div>
+ <button class="close-btn" onclick="goTo('cierre')">Cerrar →</button>
+ </div>
+ <div class="progress-bar" id="progress-bar"></div>
+ </div>
+ <div class="capa-tabs" id="capa-tabs"></div>
+ <div class="content" id="preguntas-container" style="padding-top:14px;"></div>
+ <div class="bottom-bar">
+ <button class="save-btn" onclick="saveSession()">💾 Guardar sesión</button>
+ </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+ SCREEN: CIERRE
+════════════════════════════════════════════ -->
+
+<div id="screen-cierre" class="screen">
+ <div class="header" style="background:linear-gradient(135deg,#1C1917,#44403C);">
+ <div>
+ <div style="color:rgba(255,255,255,0.55);font-size:11px;text-transform:uppercase;letter-spacing:2px;">Cerrando reto</div>
+ <div class="header-title" id="cierre-reto-name">—</div>
+ </div>
+ </div>
+ <div class="content">
+ <!-- Señales -->
+ <div class="card">
+ <div class="card-label">Señales capturadas</div>
+ <div class="conteo-row" id="cierre-conteo"></div>
+ <div id="cierre-detalle"></div>
+ </div>
+ <!-- Decisión -->
+ <div class="card">
+ <div class="card-label">Decisión del auditor</div>
+ <div class="decision-row" id="decision-row"></div>
+ </div>
+ <!-- Nota -->
+ <div class="card">
+ <div class="card-label">Nota del auditor (opcional)</div>
+ <textarea id="nota-textarea" rows="3" placeholder="Observación clave, riesgo detectado o condición para avanzar..."></textarea>
+ </div>
+ <!-- Botones -->
+ <div style="display:flex;gap:10px;margin-top:4px;">
+ <button class="btn-secondary" onclick="goTo('escuchando')">← Revisar</button>
+ <button id="completar-btn" class="btn-disabled" disabled onclick="completarReto()">Selecciona una decisión</button>
+ </div>
+ </div>
+ <div class="bottom-bar">
+ <button class="save-btn" onclick="saveSession()">💾 Guardar sesión</button>
+ </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+ SCREEN: RESUMEN
+════════════════════════════════════════════ -->
+
+<div id="screen-resumen" class="screen">
+ <div class="header" style="background:linear-gradient(135deg,#F97316,#9A3412);">
+ <div>
+ <div class="header-title">Resumen Workshop</div>
+ <div class="header-sub" id="resumen-sub">0 retos analizados</div>
+ </div>
+ <div class="header-btns">
+ <button class="header-btn" onclick="goTo('lista')">← Volver</button>
+ </div>
+ </div>
+ <div class="content">
+ <div class="stats-row" id="stats-row"></div>
+ <div id="resumen-list"></div>
+ </div>
+ <div class="bottom-bar"><button class="save-btn" onclick="saveSession()">💾 Guardar sesión</button>
+ </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+ MODAL: IMPORTAR
+════════════════════════════════════════════ -->
+
+<div class="modal-overlay" id="import-modal">
+ <div class="modal">
+ <h3>Recuperar sesión</h3>
+ <p>Pega aquí el código que copiaste con "Guardar sesión". Los datos se guardan automáticamente en este navegador.</p>
+ <textarea id="import-text" placeholder="Pega el código aquí..."></textarea>
+ <div class="error-msg" id="import-error" style="display:none;">Código no válido. Asegúrate de pegar el texto completo.</div>
+ <div class="modal-btns">
+ <button class="btn-secondary" style="flex:1;" onclick="closeImport()">Cancelar</button>
+ <button class="btn-primary" style="flex:2;padding:11px;" onclick="importSession()">Recuperar →</button>
+ </div>
+ </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════
+const STORAGE_KEY = 'alma-workshop-v2';
+
+const CAPAS = [
+ { id:'comprension', label:'Capa 1', title:'Comprensión del Reto', color:'#F97316',
+ preguntas:[
+ { id:'dolor', texto:'¿Cuál es exactamente el dolor hoy?', hint:'Sin tecnología. Si mencionan la solución antes que el problema, no está maduro.' },
+ { id:'cuantificacion',texto:'¿Cuánto tiempo o dinero se pierde actualmente?', hint:'Sin métrica base no podrás medir el éxito después.' },
+ { id:'variabilidad', texto:'¿El problema ocurre siempre igual o varía mucho?', hint:'Repetitivo = automatización. Alta variabilidad = necesita IA.' },
+ { id:'intentos', texto:'¿Ya se intentó resolver antes? ¿Por qué no funcionó?', hint:'Revela barreras ocultas, normalmente organizativas.' },
+ ]},
+ { id:'tipo', label:'Capa 2', title:'Tipo de Solución y Madurez', color:'#EA580C',
+ preguntas:[
+ { id:'tecnologia', texto:'¿Seguir reglas, generar contenido o tomar decisiones autónomas?', hint:'Clasifica sin que ellos lo nombren: automatización, GenAI o agente.' },
+ { id:'prototipo', texto:'¿Han probado algo ya, aunque sea con ChatGPT o Copilot?', hint:'Si ya hay experimentación, el reto está más maduro de lo que parece.' },
+ { id:'output', texto:'¿El output es para leer o entra en otro sistema?', hint:'Un dato que entra en Jira o Holded automáticamente multiplica la complejidad.' },
+ { id:'tolerancia', texto:'¿Cuánta tolerancia hay al error en este proceso?', hint:'Crítico en ISO 13485. Error en testing sanitario ≠ error en resumen de leads.' },
+ ]},
+ { id:'datos', label:'Capa 3', title:'Datos, Técnica y Seguridad', color:'#C2410C',
+ preguntas:[
+ { id:'fuente', texto:'¿Dónde viven los datos que necesita esta solución?', hint:'Si están en Excel manual, hay una fase previa de datos.' },
+ { id:'api', texto:'¿Accesibles vía API o habría que exportarlos a mano?', hint:'Determina si la integración es viable a corto plazo.' },
+ { id:'privacidad', texto:'¿Qué datos entrarían en la herramienta de IA?', hint:'Datos clínicos o código propietario no pueden ir a modelos externos sin política clara.' },
+ { id:'validacion', texto:'¿Quién valida que el output es correcto?', hint:'Toda solución de IA necesita un supervisor humano definido.' },
+ ]},
+ { id:'ownership', label:'Capa 4', title:'Ownership y Ejecución', color:'#9A3412',
+ preguntas:[
+ { id:'lider', texto:'¿Quién lidera esto si se aprueba?', hint:'Sin nombre propio no puede avanzar.' },
+ { id:'capacidad',texto:'¿Ese responsable tiene capacidad real ahora mismo?', hint:'Responsable nominal sin tiempo = ningún responsable.' },
+ { id:'externos', texto:'¿Qué necesitarían de fuera para ejecutarlo?', hint:'Proveedor, herramienta de pago, consultor. Contemplarlo en TTL.' },{ id:'metrica', texto:'¿Cómo sabremos en 3 meses que esto funciona?', hint:'Sin métrica concreta no está lista para probarse.' },
+ ]},
+];
+
+const SEMAFORO = [
+ { val:'bien', icon:'✓', label:'Bien', bg:'#DCFCE7', color:'#16A34A', border:'#86EFAC' },
+ { val:'parcial', icon:'~', label:'Parcial', bg:'#FEF9C3', color:'#CA8A04', border:'#FDE047' },
+ { val:'mal', icon:'✗', label:'Débil', bg:'#FEE2E2', color:'#DC2626', border:'#FCA5A5' },
+];
+
+const DECISIONES = [
+ { val:'Probar', color:'#16A34A', bg:'#DCFCE7', border:'#86EFAC', desc:'Tiene base sólida' },
+ { val:'Evaluar', color:'#D97706', bg:'#FEF9C3', border:'#FDE047', desc:'Necesita más análisis' },
+ { val:'Parking', color:'#6B7280', bg:'#F3F4F6', border:'#D1D5DB', desc:'No está maduro aún' },
+];
+
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+let state = {
+ retos: [],
+ retoActivo: null,
+ hintVisible: null,
+};
+
+function genId() { return Math.random().toString(36).substr(2,9); }
+
+function emptyReto(nombre) {
+ const señales = {};
+ CAPAS.forEach(c => c.preguntas.forEach(p => señales[p.id] = null));
+ return { id: genId(), nombre, capaActual: 0, señales, decision: null, nota: '', completado: false };
+}
+
+// ════════════════════════════════════════════
+// PERSISTENCE (localStorage)
+// ════════════════════════════════════════════
+function persist() {
+ try {
+ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.retos));
+ } catch(e) { console.warn('localStorage error', e); }
+}
+
+function loadFromStorage() {
+ try {
+ const raw = localStorage.getItem(STORAGE_KEY);
+ if (raw) {
+ const data = JSON.parse(raw);
+ if (Array.isArray(data)) state.retos = data;
+ }
+ } catch(e) {}
+}
+
+// ════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════
+let currentScreen = 'home';
+
+function goTo(screen) {
+ document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+ document.getElementById('screen-' + screen).classList.add('active');
+ currentScreen = screen;
+ window.scrollTo(0, 0);
+ render(screen);
+}
+
+// ════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════
+function render(screen) {
+ if (screen === 'home') renderHome();
+ if (screen === 'lista') renderLista();
+ if (screen === 'escuchando') renderEscuchando();
+ if (screen === 'cierre') renderCierre();
+ if (screen === 'resumen') renderResumen();
+}
+
+function renderHome() {
+ const notice = document.getElementById('home-restore-notice');
+ const count = document.getElementById('home-restore-count');
+ if (state.retos.length > 0) {
+ notice.style.display = 'flex';
+ count.textContent = state.retos.length + ' reto' + (state.retos.length !== 1 ? 's' : '') + ' guardado' + (state.retos.length !== 1 ? 's' : '');
+ } else {
+ notice.style.display = 'none';
+ }
+}
+
+function renderLista() {
+ const completados = state.retos.filter(r => r.completado).length;
+ document.getElementById('lista-sub').textContent = completados + ' completados · ' + state.retos.length + ' total';
+ document.getElementById('btn-resumen').style.display = completados > 0 ? 'block' : 'none';
+
+ const list = document.getElementById('retos-list');
+ if (state.retos.length === 0) {
+ list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-text">Cuando presenten el primer reto, añádelo aquí</div></div>`;
+ return;
+ }
+ list.innerHTML = state.retos.map(r => {
+ const dec = DECISIONES.find(d => d.val === r.decision);
+ const btnStyle = r.completado && dec
+ ? `background:${dec.bg};color:${dec.color};border:1px solid ${dec.border};`
+ : `background:linear-gradient(135deg,#F97316,#C2410C);color:white;border:none;`;
+ const dotColor = r.completado && dec ? dec.color : '#FED7AA';
+ const sub = r.completado ? 'Decisión: ' + (r.decision || '—') : 'Capa ' + (r.capaActual+1) + ' de ' + CAPAS.length;
+ const btnLabel = r.completado ? 'Ver' : 'Auditar →';
+ const onClick = `auditarReto('${r.id}')`;
+ return `
+ <div class="reto-item">
+ <div style="display:flex;align-items:center;gap:12px;">
+ <div class="reto-dot" style="background:${dotColor}"></div>
+ <div><div class="reto-name">${r.nombre}</div><div class="reto-sub">${sub}</div></div>
+ </div>
+ <button class="reto-btn" style="${btnStyle}" onclick="${onClick}">${btnLabel}</button>
+ </div>`;
+ }).join('');
+}
+</script>
+</body>
+</html>
