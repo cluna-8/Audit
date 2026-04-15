@@ -679,17 +679,161 @@ function renderLista() {
  const dotColor = r.completado && dec ? dec.color : '#FED7AA';
  const sub = r.completado ? 'Decisión: ' + (r.decision || '—') : 'Capa ' + (r.capaActual+1) + ' de ' + CAPAS.length;
  const btnLabel = r.completado ? 'Ver' : 'Auditar →';
- const onClick = `auditarReto('${r.id}')`;
+ completado ? `openCierre('${r.id}')` : `openReto('${r.id}')`;
  return `
- <div class="reto-item">
+ <div class="reto-item" id="item-${r.id}">
  <div style="display:flex;align-items:center;gap:12px;">
- <div class="reto-dot" style="background:${dotColor}"></div>
- <div><div class="reto-name">${r.nombre}</div><div class="reto-sub">${sub}</div></div>
+ <div class="reto-dot" style="background:${dotColor};"></div>
+ <div>
+ <div class="reto-name">${esc(r.nombre)}</div>
+ <div class="reto-sub">${sub}</div>
+ </div>
  </div>
  <button class="reto-btn" style="${btnStyle}" onclick="${onClick}">${btnLabel}</button>
  </div>`;
  }).join('');
 }
-</script>
-</body>
-</html>
+
+function renderEscuchando() {
+ const reto = state.retos.find(r => r.id === state.retoActivo);
+ if (!reto) return;
+ const capa = CAPAS[reto.capaActual];
+
+ // Header
+ document.getElementById('esc-reto-name').textContent = reto.nombre;
+ document.getElementById('esc-capa-title').textContent = capa.title;
+ document.getElementById('capa-header').style.background = `linear-gradient(135deg,${capa.color},#9A3412)`;
+
+ // Progress
+ const pb = document.getElementById('progress-bar');
+ pb.innerHTML = CAPAS.map((c,i) =>
+ `<div class="progress-seg ${i <= reto.capaActual ? 'done' : ''}" onclick="setCapa(${i})"></div>`
+ ).join('');
+
+ // Tabs
+ const tabs = document.getElementById('capa-tabs');
+ tabs.innerHTML = CAPAS.map((c,i) =>
+ `<button class="capa-tab ${i === reto.capaActual ? 'active' : ''}" style="${i===reto.capaActual ? 'color:'+c.color+';border-bottom-color:'+c.color+';' : ''}" onclick="setCapa(${i})">${c.label}</button>`
+ ).join('');
+
+ // Preguntas
+ const container = document.getElementById('preguntas-container');
+ container.innerHTML = capa.preguntas.map(p => {
+ const actual = reto.señales[p.id];
+ const sem = SEMAFORO.find(s => s.val === actual);
+ const borderColor = sem ? sem.border : '#FED7AA';
+ const hintOpen = state.hintVisible === p.id;
+ const hintHtml = hintOpen
+ ? `<div class="hint-box">💡 ${esc(p.hint)}</div>`
+ : '';
+ const semBtns = SEMAFORO.map(s => {
+ const active = actual === s.val;
+ return `<button class="sem-btn" style="${active ? `border-color:${s.color};background:${s.bg};color:${s.color};font-weight:800;` : `border-color:${s.border};`}" onclick="toggleSem('${p.id}','${s.val}')">
+ <div class="sem-icon">${s.icon}</div>
+ <div class="sem-label">${s.label}</div>
+ </button>`;
+ }).join('');
+ return `
+ <div class="pregunta-card" style="border-color:${borderColor};">
+ <div class="pregunta-top">
+ <div class="pregunta-text">${esc(p.texto)}</div>
+ <button class="hint-btn" onclick="toggleHint('${p.id}')" aria-label="Pista">?</button>
+ </div>
+ ${hintHtml}
+ <div class="semaforo">${semBtns}</div>
+ </div>`;
+ }).join('');
+
+ // Nav
+ const prevBtn = reto.capaActual > 0
+ ? `<button class="btn-secondary" onclick="setCapa(${reto.capaActual-1})">← Anterior</button>` : '';
+ const nextBtn = reto.capaActual < CAPAS.length - 1
+ ? `<button class="btn-primary" style="flex:2;" onclick="setCapa(${reto.capaActual+1})">${CAPAS[reto.capaActual+1].title} →</button>`
+ : `<button class="btn-success" onclick="goTo('cierre')">Cerrar reto ✓</button>`;
+ container.innerHTML += `<div class="nav-row" style="margin-top:6px;">${prevBtn}${nextBtn}</div>`;
+}
+
+function renderCierre() {
+ const reto = state.retos.find(r => r.id === state.retoActivo);
+ if (!reto) return;
+ document.getElementById('cierre-reto-name').textContent = reto.nombre;
+
+ // Conteo
+ const conteo = { bien:0, parcial:0, mal:0 };
+ Object.values(reto.señales).forEach(v => { if(v) conteo[v]++; });
+ document.getElementById('cierre-conteo').innerHTML = SEMAFORO.map(s =>
+ `<div class="conteo-box" style="background:${s.bg};border:1px solid ${s.border};">
+ <div class="conteo-num" style="color:${s.color};">${conteo[s.val]}</div>
+ <div class="conteo-lbl" style="color:${s.color};">${s.label}</div>
+ </div>`
+ ).join('');
+
+ // Detalle por capa
+ document.getElementById('cierre-detalle').innerHTML = CAPAS.map(c => {
+ const chips = c.preguntas.map(p => {
+ const s = SEMAFORO.find(s => s.val === reto.señales[p.id]);return `<span class="chip" style="background:${s?s.bg:'#F9FAFB'};border:1px solid ${s?s.border:'#E5E7EB'};color:${s?s.color:'#9CA3AF'};">${s?s.icon:'—'} ${esc(p.texto.slice(0,28))}…</span>`;
+ }).join('');
+ return `<div style="margin-bottom:10px;">
+ <div style="font-size:11px;color:${c.color};font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">${c.title}</div>
+ <div style="display:flex;flex-wrap:wrap;gap:5px;">${chips}</div>
+ </div>`;
+ }).join('');
+
+ // Decisiones
+ document.getElementById('decision-row').innerHTML = DECISIONES.map(d => {
+ const active = reto.decision === d.val;
+ return `<button class="dec-btn" style="${active ? `border-color:${d.color};background:${d.bg};color:${d.color};font-weight:800;` : ''}" onclick="setDecision('${d.val}')">
+ <div class="dec-val">${d.val}</div>
+ <div class="dec-desc">${d.desc}</div>
+ </button>`;
+ }).join('');
+
+ // Nota
+ document.getElementById('nota-textarea').value = reto.nota || '';
+
+ // Completar btn
+ const btn = document.getElementById('completar-btn');
+ if (reto.decision) {
+ btn.className = 'btn-success';
+ btn.disabled = false;
+ btn.textContent = `Guardar como "${reto.decision}" →`;
+ } else {
+ btn.className = 'btn-disabled';
+ btn.disabled = true;
+ btn.textContent = 'Selecciona una decisión';
+ }
+}
+
+function renderResumen() {
+ const done = state.retos.filter(r => r.completado);
+ document.getElementById('resumen-sub').textContent = done.length + ' retos analizados';
+
+ // Stats
+ document.getElementById('stats-row').innerHTML = DECISIONES.map(d => {
+ const n = done.filter(r => r.decision === d.val).length;
+ return `<div class="stat-box" style="background:${d.bg};border:1px solid ${d.border};">
+ <div class="stat-num" style="color:${d.color};">${n}</div>
+ <div class="stat-lbl" style="color:${d.color};">${d.val}</div>
+ </div>`;
+ }).join('');
+
+ // List
+ document.getElementById('resumen-list').innerHTML = done.map(r => {
+ const dec = DECISIONES.find(d => d.val === r.decision);
+ const conteo = { bien:0, parcial:0, mal:0 };
+ Object.values(r.señales).forEach(v => { if(v) conteo[v]++; });
+ const chips = SEMAFORO.map(s =>
+ `<span class="chip" style="background:${s.bg};border:1px solid ${s.border};color:${s.color};font-weight:600;">${s.icon} ${conteo[s.val]}</span>`
+ ).join('');
+ const badge = dec ? `<span class="badge" style="background:${dec.bg};color:${dec.color};border:1px solid ${dec.border};">${dec.val}</span>` : '';
+ const nota = r.nota ? `<div class="nota-text">"${esc(r.nota)}"</div>` : '';
+ return `<div class="resumen-card" style="border-color:${dec?.border||'#FED7AA'};">
+ <div class="resumen-top">
+ <div class="resumen-name">${esc(r.nombre)}</div>
+ ${badge}
+ </div>
+ <div style="display:flex;gap:6px;flex-wrap:wrap;">${chips}</div>
+ ${nota}
+ </div>`;
+ }).join('');
+}
